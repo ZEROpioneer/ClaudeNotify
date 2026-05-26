@@ -15,13 +15,19 @@ ClaudeNotify — 可复用的 Claude Code 桌面通知系统。
 
 ```
 ClaudeNotify/
-├── README.md              — 使用说明
-├── notify.ps1             — WPF 弹窗核心（PowerShell，需 UTF-8 BOM）
-├── notify-stop.sh          — Stop hook 入口
-├── notify-permission.sh    — Permission hook 入口
-├── status.sh               — StatusLine 脚本
-├── install.sh              — 一键安装到 ~/.claude/
-├── CLAUDE.md               — 本文件
+├── .claude-plugin/
+│   └── plugin.json          — 插件清单
+├── hooks/
+│   └── hooks.json           — Stop + PermissionRequest 钩子
+├── scripts/
+│   ├── notify.ps1           — WPF 弹窗核心（PowerShell，需 UTF-8 BOM）
+│   ├── notify-stop.sh       — Stop hook 入口
+│   ├── notify-permission.sh — Permission hook 入口
+│   └── status.sh            — StatusLine 脚本
+├── install.sh               — 传统安装（复制到 ~/.claude/ + 配置 settings.json）
+├── install-statusline.sh    — 独立安装 statusLine 到 settings.json
+├── CLAUDE.md                — 本文件
+├── README.md
 └── .gitignore
 ```
 
@@ -34,6 +40,16 @@ ClaudeNotify/
 
 ## 安装方式
 
+### Plugin（推荐）
+
+```
+/plugin install github.com/ZEROpioneer/ClaudeNotify
+```
+
+Hooks 自动生效。StatusLine 需额外执行 `bash install-statusline.sh`。
+
+### 传统
+
 ```bash
 bash install.sh
 ```
@@ -42,7 +58,8 @@ bash install.sh
 
 ## 部署原理
 
-安装脚本将脚本文件复制到 `~/.claude/`，并在 `~/.claude/settings.json` 中配置全局 hooks 和 statusLine。所有项目自动继承。
+- **Plugin 方式**：hooks 随插件启用自动注册，路径通过 `${CLAUDE_PLUGIN_ROOT}` 引用脚本
+- **传统方式**：安装脚本将脚本文件复制到 `~/.claude/`，并在 `~/.claude/settings.json` 中配置全局 hooks 和 statusLine。所有项目自动继承
 
 ## 语言偏好
 

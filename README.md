@@ -14,8 +14,26 @@ Claude Code 桌面通知系统 — WPF 弹窗 + StatusLine 会话名。
 
 ## 快速开始
 
+### 方式一：Plugin 安装（推荐）
+
+```
+/plugin install github.com/ZEROpioneer/ClaudeNotify
+```
+
+Hooks（Stop/PermissionRequest 弹窗）自动生效。
+
+StatusLine 需要额外一步：
+
 ```bash
-git clone <repo-url> ClaudeNotify
+git clone https://github.com/ZEROpioneer/ClaudeNotify.git
+cd ClaudeNotify
+bash install-statusline.sh
+```
+
+### 方式二：传统安装
+
+```bash
+git clone https://github.com/ZEROpioneer/ClaudeNotify.git
 cd ClaudeNotify
 bash install.sh
 ```

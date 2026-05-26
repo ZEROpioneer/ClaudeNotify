@@ -1,0 +1,13 @@
+{
+  "name": "claude-notify",
+  "version": "1.0.0",
+  "description": "Windows WPF桌面通知系统 — 任务完成/权限确认弹窗 + 状态栏会话名",
+  "author": {
+    "name": "张继烨",
+    "url": "https://github.com/ZEROpioneer"
+  },
+  "repository": "https://github.com/ZEROpioneer/ClaudeNotify",
+  "license": "MIT",
+  "keywords": ["notify", "notification", "windows", "wpf", "desktop"],
+  "hooks": "./hooks/hooks.json"
+}

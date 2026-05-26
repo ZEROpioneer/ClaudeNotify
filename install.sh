@@ -11,10 +11,10 @@ echo "=== ClaudeNotify 安装 ==="
 
 # 1. 复制脚本到 ~/.claude/
 echo "[1/4] 复制脚本文件..."
-cp "$SCRIPT_DIR/notify.ps1" "$CLAUDE_DIR/notify.ps1"
-cp "$SCRIPT_DIR/notify-stop.sh" "$CLAUDE_DIR/notify-stop.sh"
-cp "$SCRIPT_DIR/notify-permission.sh" "$CLAUDE_DIR/notify-permission.sh"
-cp "$SCRIPT_DIR/status.sh" "$CLAUDE_DIR/status.sh"
+cp "$SCRIPT_DIR/scripts/notify.ps1" "$CLAUDE_DIR/notify.ps1"
+cp "$SCRIPT_DIR/scripts/notify-stop.sh" "$CLAUDE_DIR/notify-stop.sh"
+cp "$SCRIPT_DIR/scripts/notify-permission.sh" "$CLAUDE_DIR/notify-permission.sh"
+cp "$SCRIPT_DIR/scripts/status.sh" "$CLAUDE_DIR/status.sh"
 
 # 2. 赋予执行权限
 echo "[2/4] 设置执行权限..."

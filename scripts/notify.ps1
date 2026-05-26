@@ -64,7 +64,7 @@ if ($Type -eq "permission") {
     $iconChar = [char]0x003F
     $startColor = "#FFf59e0b"
     $endColor = "#FFef4444"
-    $soundPath = "C:\Windows\Media\Windows Notify.wav"
+    $soundPath = "$env:SystemRoot\Media\Windows Notify.wav"
     $durationSec = 8
 } else {
     $title = "Claude Code"
@@ -72,7 +72,7 @@ if ($Type -eq "permission") {
     $iconChar = [char]0x2713
     $startColor = "#FF10b981"
     $endColor = "#FF3b82f6"
-    $soundPath = "C:\Windows\Media\Windows Ding.wav"
+    $soundPath = "$env:SystemRoot\Media\Windows Ding.wav"
     $durationSec = 5
 }
 
@@ -154,7 +154,10 @@ $top = $screen.Bottom - $windowHeight - $margin
 "@
 
 if ($subtitle -eq "") {
-    $node = $xaml.SelectSingleNode("//*[@x:Name='SubtitleBlock']")
+    $nsmgr = New-Object System.Xml.XmlNamespaceManager($xaml.NameTable)
+    $nsmgr.AddNamespace("ns", "http://schemas.microsoft.com/winfx/2006/xaml/presentation")
+    $nsmgr.AddNamespace("x", "http://schemas.microsoft.com/winfx/2006/xaml")
+    $node = $xaml.SelectSingleNode("//ns:*[@x:Name='SubtitleBlock']", $nsmgr)
     if ($node) { $node.SetAttribute("Visibility", "Collapsed") }
 }
 
