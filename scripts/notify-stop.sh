@@ -1,6 +1,7 @@
 #!/bin/bash
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+QUEUE_DIR="$HOME/.claude/notify-queue"
+mkdir -p "$QUEUE_DIR"
 j=$(cat)
 sid=$(echo "$j"|sed 's/.*"session_id":"\([^"]*\)".*/\1/')
 [ "$sid" = "$j" ] && sid=""
-powershell -NoProfile -File "$SCRIPT_DIR/notify.ps1" -Type stop -ProjectDir "$PWD" -SessionId "$sid"
+echo "{\"type\":\"stop\",\"projectDir\":\"$PWD\",\"sessionId\":\"$sid\"}" > "$QUEUE_DIR/stop-$(date +%s%N).json"

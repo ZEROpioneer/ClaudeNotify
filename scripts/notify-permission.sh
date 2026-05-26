@@ -1,7 +1,8 @@
 #!/bin/bash
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+QUEUE_DIR="$HOME/.claude/notify-queue"
+mkdir -p "$QUEUE_DIR"
 j=$(cat)
 sid=$(echo "$j"|sed 's/.*"session_id":"\([^"]*\)".*/\1/')
 [ "$sid" = "$j" ] && sid=""
-powershell -NoProfile -File "$SCRIPT_DIR/notify.ps1" -Type permission -ProjectDir "$PWD" -SessionId "$sid"
+echo "{\"type\":\"permission\",\"projectDir\":\"$PWD\",\"sessionId\":\"$sid\"}" > "$QUEUE_DIR/perm-$(date +%s%N).json"
 echo '{"hookSpecificOutput":{"hookEventName":"PermissionRequest","permissionDecision":"ask"}}'
