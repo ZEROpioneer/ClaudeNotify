@@ -65,6 +65,14 @@ function Show-Notification {
         $endColor = "#FFef4444"
         $soundPath = "$env:SystemRoot\Media\Windows Notify.wav"
         $durationSec = 8
+    } elseif ($Type -eq "notification") {
+        $title = "Claude Code"
+        $message = "Waiting for your input"
+        $iconChar = [char]0x276F
+        $startColor = "#FF8b5cf6"
+        $endColor = "#FF3b82f6"
+        $soundPath = "$env:SystemRoot\Media\Windows Ding.wav"
+        $durationSec = 6
     } else {
         $title = "Claude Code"
         $message = "Task completed"
