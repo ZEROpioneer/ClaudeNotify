@@ -1,4 +1,11 @@
+# 项目开发/维护产生的本地文件
+.claude/settings.json
 .claude/settings.local.json
 .claude/session-names.json
 .claude/session-name.txt
 .claude/pending-name.txt
+test_data/
+
+# 系统垃圾文件
+.DS_Store
+Thumbs.db
