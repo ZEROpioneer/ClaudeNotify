@@ -7,7 +7,6 @@
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName PresentationCore
 Add-Type -AssemblyName WindowsBase
-Add-Type -AssemblyName System.Windows.Forms
 
 Add-Type @"
 using System;
@@ -79,17 +78,12 @@ if ($Type -eq "permission") {
 $subtitle = if ($sessionName -ne "") { $sessionName } else { "" }
 $nameColor = Get-ColorFromName $sessionName
 
-try {
-    $sound = New-Object Media.SoundPlayer $soundPath
-    $sound.PlaySync()
-} catch { }
-
-$screen = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+$workArea = [System.Windows.SystemParameters]::WorkArea
 $windowWidth = 320
 $windowHeight = if ($subtitle -ne "") { 105 } else { 90 }
 $margin = 20
-$left = $screen.Right - $windowWidth - $margin
-$top = $screen.Bottom - $windowHeight - $margin
+$left = $workArea.Right - $windowWidth - $margin
+$top = $workArea.Bottom - $windowHeight - $margin
 
 [xml]$xaml = @"
 <Window
@@ -187,4 +181,11 @@ $window.Add_Closed({ $frame.Continue = $false })
 $window.Add_Loaded({ $timer.Start() })
 
 $window.Show() | Out-Null
+
+# 窗口已显示，异步播放提示音（不阻塞）
+try {
+    $sound = New-Object Media.SoundPlayer $soundPath
+    $sound.Play()
+} catch { }
+
 [System.Windows.Threading.Dispatcher]::PushFrame($frame)
