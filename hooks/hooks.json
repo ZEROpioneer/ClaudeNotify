@@ -23,18 +23,6 @@
           }
         ]
       }
-    ],
-    "Notification": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/notify-notification.sh",
-            "timeout": 15
-          }
-        ]
-      }
     ]
   }
 }

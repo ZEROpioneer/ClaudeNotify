@@ -15,12 +15,11 @@ cp "$SCRIPT_DIR/scripts/notify.ps1" "$CLAUDE_DIR/notify.ps1"
 cp "$SCRIPT_DIR/scripts/notify-daemon.ps1" "$CLAUDE_DIR/notify-daemon.ps1"
 cp "$SCRIPT_DIR/scripts/notify-stop.sh" "$CLAUDE_DIR/notify-stop.sh"
 cp "$SCRIPT_DIR/scripts/notify-permission.sh" "$CLAUDE_DIR/notify-permission.sh"
-cp "$SCRIPT_DIR/scripts/notify-notification.sh" "$CLAUDE_DIR/notify-notification.sh"
 cp "$SCRIPT_DIR/scripts/status.sh" "$CLAUDE_DIR/status.sh"
 
 # 2. 赋予执行权限
 echo "[2/5] 设置执行权限..."
-chmod +x "$CLAUDE_DIR/notify-stop.sh" "$CLAUDE_DIR/notify-permission.sh" "$CLAUDE_DIR/notify-notification.sh" "$CLAUDE_DIR/status.sh"
+chmod +x "$CLAUDE_DIR/notify-stop.sh" "$CLAUDE_DIR/notify-permission.sh" "$CLAUDE_DIR/status.sh"
 
 # 3. 启动常驻守护进程（关键：避免每次弹窗冷启动 WPF）
 echo "[3/5] 启动通知守护进程..."
@@ -73,7 +72,7 @@ settings['statusLine'] = {
     'refreshInterval': 30
 }
 
-# 添加 hooks（覆盖 Stop、PermissionRequest、Notification，保留其他 hooks）
+# 添加 hooks（覆盖 Stop 和 PermissionRequest，保留其他 hooks）
 if 'hooks' not in settings:
     settings['hooks'] = {}
 
@@ -90,15 +89,6 @@ settings['hooks']['PermissionRequest'] = [{
     'hooks': [{
         'type': 'command',
         'command': 'bash ~/.claude/notify-permission.sh',
-        'timeout': 15,
-        'async': True
-    }]
-}]
-
-settings['hooks']['Notification'] = [{
-    'hooks': [{
-        'type': 'command',
-        'command': 'bash ~/.claude/notify-notification.sh',
         'timeout': 15,
         'async': True
     }]

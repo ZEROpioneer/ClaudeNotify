@@ -227,7 +227,7 @@ function Show-Notification {
         # Close timer
         $timer = New-Object System.Windows.Threading.DispatcherTimer
         $timer.Interval = [TimeSpan]::FromSeconds($durationSec)
-        $timer.Add_Tick({ $timer.Stop(); $window.Close() })
+        $timer.Add_Tick({ $frame.Continue = $false })
         $timer.Start()
     })
 
@@ -242,6 +242,7 @@ function Show-Notification {
     } catch { $null = $_ }
 
     [System.Windows.Threading.Dispatcher]::PushFrame($frame)
+    $window.Close()
 }
 
 # Write PID file for install script to find and kill old instances
