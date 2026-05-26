@@ -17,9 +17,9 @@ elif command -v python >/dev/null 2>&1; then
   PY="python"
 else
   for py_path in \
-    "/c/Users/$USER/AppData/Local/Programs/Python/Python314/python.exe" \
-    "/c/Users/$USER/AppData/Local/Programs/Python/Python313/python.exe" \
-    "/c/Users/$USER/AppData/Local/Programs/Python/Python312/python.exe" \
+    "$HOME/AppData/Local/Programs/Python/Python314/python.exe" \
+    "$HOME/AppData/Local/Programs/Python/Python313/python.exe" \
+    "$HOME/AppData/Local/Programs/Python/Python312/python.exe" \
     "/c/Python314/python.exe" \
     "/c/Python313/python.exe"; do
     if [ -f "$py_path" ]; then PY="$py_path"; break; fi
