@@ -97,7 +97,19 @@ function Show-Notification {
     $windowHeight = if ($subtitle) { 105 } else { 90 }
     $margin = 20
     $left = $workArea.Right - $windowWidth - $margin
-    $top = $workArea.Bottom - $windowHeight - $margin
+
+    # 共享计数器：获取弹窗位置编号
+    $stateMutex = New-Object System.Threading.Mutex($false, "Global\ClaudeNotifyState")
+    $stateMutex.WaitOne()
+    $stateFile = "$env:USERPROFILE\.claude\notify-counter.txt"
+    $counter = 0
+    if (Test-Path $stateFile) { $counter = [int](Get-Content $stateFile -Raw) }
+    $myIndex = $counter
+    $counter++
+    Set-Content $stateFile -Value $counter
+    $stateMutex.ReleaseMutex()
+
+    $top = $workArea.Bottom - $windowHeight - $margin - ($myIndex * ($windowHeight + 8))
 
     # Outer border (gradient)
     $outerBorder = New-Object System.Windows.Controls.Border
@@ -211,7 +223,7 @@ function Show-Notification {
     $window.Topmost = $true
     $window.ShowInTaskbar = $false
     $window.ShowActivated = $false
-    $window.Opacity = 0
+    $window.Opacity = 1
 
     $window.Add_SourceInitialized({
         $helper = New-Object System.Windows.Interop.WindowInteropHelper($window)
@@ -222,14 +234,6 @@ function Show-Notification {
     })
 
     $window.Add_Loaded({
-        # Fade in
-        $animIn = New-Object System.Windows.Media.Animation.DoubleAnimation(0, 1, [TimeSpan]::FromSeconds(0.25))
-        $window.BeginAnimation([System.Windows.Window]::OpacityProperty, $animIn)
-        # Fade out after duration
-        $animOut = New-Object System.Windows.Media.Animation.DoubleAnimation(1, 0, [TimeSpan]::FromSeconds(0.5))
-        $animOut.BeginTime = [TimeSpan]::FromSeconds($durationSec - 0.5)
-        $window.BeginAnimation([System.Windows.Window]::OpacityProperty, $animOut)
-
         # Close timer
         $timer = New-Object System.Windows.Threading.DispatcherTimer
         $timer.Interval = [TimeSpan]::FromSeconds($durationSec)
@@ -247,8 +251,16 @@ function Show-Notification {
         $sound.Play()
     } catch { $null = $_ }
 
-    [System.Windows.Threading.Dispatcher]::PushFrame($frame)
-    $window.Close()
+    try {
+        [System.Windows.Threading.Dispatcher]::PushFrame($frame)
+        $window.Close()
+    } finally {
+        $stateMutex.WaitOne()
+        $counter = [int](Get-Content $stateFile -Raw)
+        $counter--
+        Set-Content $stateFile -Value $counter
+        $stateMutex.ReleaseMutex()
+    }
 }
 
 # Write PID file for install script to find and kill old instances
@@ -263,16 +275,21 @@ if (-not (Test-Path $queueDir)) {
 # Clean stale trigger files from previous run
 Get-ChildItem $queueDir -Filter "*.json" -ErrorAction SilentlyContinue | Remove-Item -Force
 
-# Main loop: poll directory for trigger files
+# Main loop: FileSystemWatcher for instant trigger file detection
+$watcher = [System.IO.FileSystemWatcher]::new($queueDir, "*.json")
+$watcher.IncludeSubdirectories = $false
+
 while ($true) {
-    $files = Get-ChildItem $queueDir -Filter "*.json" -ErrorAction SilentlyContinue
-    foreach ($f in $files) {
-        Start-Sleep -Milliseconds 50
-        try {
-            $json = Get-Content $f.FullName -Raw -Encoding UTF8 | ConvertFrom-Json
-            Show-Notification -Type $json.type -ProjectDir $json.projectDir -SessionId $json.sessionId
-        } catch { $null = $_ }
-        Remove-Item $f.FullName -Force -ErrorAction SilentlyContinue
-    }
-    Start-Sleep -Milliseconds 500
+    $result = $watcher.WaitForChanged("Created", 1000)
+    if ($result.TimedOut) { continue }
+
+    Start-Sleep -Milliseconds 50
+    $path = Join-Path $queueDir $result.Name
+
+    try {
+        $json = Get-Content $path -Raw -Encoding UTF8 | ConvertFrom-Json
+        Show-Notification -Type $json.type -ProjectDir $json.projectDir -SessionId $json.sessionId
+    } catch { $null = $_ }
+
+    Remove-Item $path -Force -ErrorAction SilentlyContinue
 }

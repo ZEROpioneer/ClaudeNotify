@@ -17,10 +17,29 @@ chmod +x "$CLAUDE_DIR/status.sh"
 
 # 2. 启动守护进程
 echo "[2/3] 启动通知守护进程..."
-# 杀掉旧实例（通过 PID 文件）
-powershell -Command "\$pidFile = \"\$env:USERPROFILE\\.claude\\notify-daemon.pid\"; if (Test-Path \$pidFile) { try { \$oldPid = [int](Get-Content \$pidFile -Raw); Stop-Process -Id \$oldPid -Force -ErrorAction Stop; Write-Host '  Stopped old daemon' } catch {}; Remove-Item \$pidFile -Force }" 2>/dev/null
-powershell -Command "Start-Process -WindowStyle Hidden -FilePath powershell -ArgumentList '-NoProfile', '-File', '$CLAUDE_DIR/notify-daemon.ps1'"
-echo "  守护进程已启动"
+# 停止旧实例
+if [ -f "$CLAUDE_DIR/notify-daemon.pid" ]; then
+    OLD_PID=$(cat "$CLAUDE_DIR/notify-daemon.pid" 2>/dev/null)
+    if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then
+        powershell -Command "Stop-Process -Id $OLD_PID -Force -ErrorAction SilentlyContinue" 2>/dev/null
+        echo "  已停止旧守护进程"
+    fi
+    rm -f "$CLAUDE_DIR/notify-daemon.pid"
+fi
+# 启动新守护进程（Start-Process 确保不受父进程退出影响）
+powershell -Command "Start-Process -FilePath powershell -ArgumentList '-WindowStyle','Hidden','-NoProfile','-File','$CLAUDE_DIR/notify-daemon.ps1'"
+sleep 1
+# 验证启动成功
+if [ -f "$CLAUDE_DIR/notify-daemon.pid" ]; then
+    NEW_PID=$(cat "$CLAUDE_DIR/notify-daemon.pid" 2>/dev/null)
+    if [ -n "$NEW_PID" ] && kill -0 "$NEW_PID" 2>/dev/null; then
+        echo "  守护进程已启动 (PID $NEW_PID)"
+    else
+        echo "  警告: 守护进程启动失败，将使用降级弹窗模式"
+    fi
+else
+    echo "  警告: 守护进程启动失败，将使用降级弹窗模式"
+fi
 
 # 3. 检测 Python 并配置 settings.json
 echo "[3/3] 配置 statusLine..."

@@ -83,7 +83,19 @@ $windowWidth = 320
 $windowHeight = if ($subtitle -ne "") { 105 } else { 90 }
 $margin = 20
 $left = $workArea.Right - $windowWidth - $margin
-$top = $workArea.Bottom - $windowHeight - $margin
+
+# 共享计数器：获取弹窗位置编号（Mutex 保护原子操作）
+$stateMutex = New-Object System.Threading.Mutex($false, "Global\ClaudeNotifyState")
+$stateMutex.WaitOne()
+$stateFile = "$env:USERPROFILE\.claude\notify-counter.txt"
+$counter = 0
+if (Test-Path $stateFile) { $counter = [int](Get-Content $stateFile -Raw) }
+$myIndex = $counter
+$counter++
+Set-Content $stateFile -Value $counter
+$stateMutex.ReleaseMutex()
+
+$top = $workArea.Bottom - $windowHeight - $margin - ($myIndex * ($windowHeight + 8))
 
 [xml]$xaml = @"
 <Window
@@ -188,4 +200,13 @@ try {
     $sound.Play()
 } catch { }
 
-[System.Windows.Threading.Dispatcher]::PushFrame($frame)
+try {
+    [System.Windows.Threading.Dispatcher]::PushFrame($frame)
+} finally {
+    # 弹窗关闭，递减计数器（finally 确保崩溃也执行）
+    $stateMutex.WaitOne()
+    $counter = [int](Get-Content $stateFile -Raw)
+    $counter--
+    Set-Content $stateFile -Value $counter
+    $stateMutex.ReleaseMutex()
+}
