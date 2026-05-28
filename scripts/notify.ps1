@@ -47,7 +47,13 @@ function Get-ColorFromName($name) {
 
 $sessionName = ""
 if ($ProjectDir -ne "" -and $SessionId -ne "") {
-    $namesFile = Join-Path $ProjectDir ".claude\session-names.json"
+    # Normalize bash path to Windows path (/d/project → D:\project)
+    $pd = $ProjectDir
+    if ($pd -match '^/[a-zA-Z]/') {
+        $pd = $pd -replace '^/([a-zA-Z])/', '$1:\'
+        $pd = $pd -replace '/', '\'
+    }
+    $namesFile = Join-Path $pd ".claude\session-names.json"
     if (Test-Path $namesFile) {
         try {
             $json = Get-Content $namesFile -Raw -Encoding UTF8 | ConvertFrom-Json
