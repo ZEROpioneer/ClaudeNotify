@@ -18,7 +18,7 @@ if (-not (Test-Path $queueDir)) {
 Get-ChildItem $queueDir -Filter "*.json" -ErrorAction SilentlyContinue | Remove-Item -Force
 
 function Invoke-Notification($type, $projectDir, $sessionId) {
-    Start-Process -FilePath powershell -ArgumentList @(
+    Start-Process -WindowStyle Hidden -FilePath powershell -ArgumentList @(
         '-NoProfile', '-WindowStyle', 'Hidden',
         '-File', $notifyScript,
         '-Type', $type,
