@@ -205,7 +205,8 @@ try {
 } finally {
     # 弹窗关闭，递减计数器（finally 确保崩溃也执行）
     $stateMutex.WaitOne()
-    $counter = [int](Get-Content $stateFile -Raw)
+    $counter = 0
+    if (Test-Path $stateFile) { $counter = [int](Get-Content $stateFile -Raw) }
     $counter--
     Set-Content $stateFile -Value $counter
     $stateMutex.ReleaseMutex()

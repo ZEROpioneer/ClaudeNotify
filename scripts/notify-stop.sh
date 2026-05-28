@@ -15,7 +15,7 @@ PID_FILE="$HOME/.claude/notify-daemon.pid"
 DAEMON_ALIVE=false
 if [ -f "$PID_FILE" ]; then
     DAEMON_PID=$(cat "$PID_FILE" 2>/dev/null)
-    if [ -n "$DAEMON_PID" ] && kill -0 "$DAEMON_PID" 2>/dev/null; then
+    if [ -n "$DAEMON_PID" ] && powershell -NoProfile -Command "Get-Process -Id $DAEMON_PID -ErrorAction SilentlyContinue" >/dev/null 2>&1; then
         DAEMON_ALIVE=true
     fi
 fi

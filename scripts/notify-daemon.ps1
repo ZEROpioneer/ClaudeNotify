@@ -256,7 +256,8 @@ function Show-Notification {
         $window.Close()
     } finally {
         $stateMutex.WaitOne()
-        $counter = [int](Get-Content $stateFile -Raw)
+        $counter = 0
+        if (Test-Path $stateFile) { $counter = [int](Get-Content $stateFile -Raw) }
         $counter--
         Set-Content $stateFile -Value $counter
         $stateMutex.ReleaseMutex()
@@ -280,11 +281,25 @@ $watcher = [System.IO.FileSystemWatcher]::new($queueDir, "*.json")
 $watcher.IncludeSubdirectories = $false
 
 while ($true) {
+    # 先清扫积压文件（处理弹窗期间可能被 FileSystemWatcher 错过的事件）
+    $files = Get-ChildItem $queueDir -Filter "*.json" -ErrorAction SilentlyContinue | Sort-Object CreationTime
+    if ($files) {
+        foreach ($f in $files) {
+            try {
+                $json = Get-Content $f.FullName -Raw -Encoding UTF8 | ConvertFrom-Json
+                Show-Notification -Type $json.type -ProjectDir $json.projectDir -SessionId $json.sessionId
+            } catch { $null = $_ }
+            Remove-Item $f.FullName -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    # 等待新触发文件
     $result = $watcher.WaitForChanged("Created", 1000)
     if ($result.TimedOut) { continue }
 
     Start-Sleep -Milliseconds 50
     $path = Join-Path $queueDir $result.Name
+    if (-not (Test-Path $path)) { continue }
 
     try {
         $json = Get-Content $path -Raw -Encoding UTF8 | ConvertFrom-Json

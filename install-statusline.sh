@@ -20,7 +20,7 @@ echo "[2/3] 启动通知守护进程..."
 # 停止旧实例
 if [ -f "$CLAUDE_DIR/notify-daemon.pid" ]; then
     OLD_PID=$(cat "$CLAUDE_DIR/notify-daemon.pid" 2>/dev/null)
-    if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then
+    if [ -n "$OLD_PID" ] && powershell -NoProfile -Command "Get-Process -Id $OLD_PID -ErrorAction SilentlyContinue" >/dev/null 2>&1; then
         powershell -Command "Stop-Process -Id $OLD_PID -Force -ErrorAction SilentlyContinue" 2>/dev/null
         echo "  已停止旧守护进程"
     fi
@@ -32,7 +32,7 @@ sleep 1
 # 验证启动成功
 if [ -f "$CLAUDE_DIR/notify-daemon.pid" ]; then
     NEW_PID=$(cat "$CLAUDE_DIR/notify-daemon.pid" 2>/dev/null)
-    if [ -n "$NEW_PID" ] && kill -0 "$NEW_PID" 2>/dev/null; then
+    if [ -n "$NEW_PID" ] && powershell -NoProfile -Command "Get-Process -Id $NEW_PID -ErrorAction SilentlyContinue" >/dev/null 2>&1; then
         echo "  守护进程已启动 (PID $NEW_PID)"
     else
         echo "  警告: 守护进程启动失败，将使用降级弹窗模式"
