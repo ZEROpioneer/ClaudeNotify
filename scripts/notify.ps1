@@ -90,7 +90,7 @@ $stateMutex.WaitOne()
 $stateFile = "$env:USERPROFILE\.claude\notify-counter.txt"
 $counter = 0
 if (Test-Path $stateFile) { $counter = [int](Get-Content $stateFile -Raw) }
-$myIndex = $counter
+$myIndex = [Math]::Max(0, $counter)
 $counter++
 Set-Content $stateFile -Value $counter
 $stateMutex.ReleaseMutex()
@@ -207,7 +207,7 @@ try {
     $stateMutex.WaitOne()
     $counter = 0
     if (Test-Path $stateFile) { $counter = [int](Get-Content $stateFile -Raw) }
-    $counter--
+    if ($counter -gt 0) { $counter-- }
     Set-Content $stateFile -Value $counter
     $stateMutex.ReleaseMutex()
 }
