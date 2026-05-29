@@ -16,7 +16,7 @@ cp "$SCRIPT_DIR/scripts/notify-daemon.ps1" "$CLAUDE_DIR/notify-daemon.ps1"
 chmod +x "$CLAUDE_DIR/status.sh"
 
 # 2. 启动守护进程
-echo "[2/3] 启动通知守护进程..."
+echo "[2/4] 启动通知守护进程..."
 # 停止旧实例
 if [ -f "$CLAUDE_DIR/notify-daemon.pid" ]; then
     OLD_PID=$(cat "$CLAUDE_DIR/notify-daemon.pid" 2>/dev/null)
@@ -41,8 +41,13 @@ else
     echo "  警告: 守护进程启动失败，将使用降级弹窗模式"
 fi
 
-# 3. 检测 Python 并配置 settings.json
-echo "[3/3] 配置 statusLine..."
+# 3. 配置开机自启
+echo "[3/4] 配置开机自启..."
+powershell -NoProfile -Command "Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'ClaudeNotify' -Value 'powershell -WindowStyle Hidden -NoProfile -File \"%USERPROFILE%\.claude\notify-daemon.ps1\"'"
+echo "  已添加到注册表 Run 键"
+
+# 4. 检测 Python 并配置 settings.json
+echo "[4/4] 配置 statusLine..."
 PY=""
 if [ -n "$PYTHON_PATH" ] && command -v "$PYTHON_PATH" >/dev/null 2>&1; then
   PY="$PYTHON_PATH"
@@ -92,7 +97,5 @@ print('statusLine 已配置')
 "
 
 echo ""
-echo "StatusLine 已安装，守护进程已启动，重启 Claude Code 生效。"
-echo ""
-echo "重启电脑后需重新启动守护进程："
-echo "  powershell -WindowStyle Hidden -File $CLAUDE_DIR/notify-daemon.ps1"
+echo "StatusLine 已安装，守护进程已启动，已配置开机自启。"
+echo "重启 Claude Code 生效。"

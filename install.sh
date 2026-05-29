@@ -47,8 +47,13 @@ else
     echo "  警告: 守护进程启动失败，将使用降级弹窗模式"
 fi
 
-# 4. 检测 Python（用于合并 JSON）
-echo "[4/5] 配置全局 settings.json..."
+# 4. 配置开机自启
+echo "[4/6] 配置开机自启..."
+powershell -NoProfile -Command "Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'ClaudeNotify' -Value 'powershell -WindowStyle Hidden -NoProfile -File \"%USERPROFILE%\.claude\notify-daemon.ps1\"'"
+echo "  已添加到注册表 Run 键，重启后自动启动守护进程"
+
+# 5. 检测 Python（用于合并 JSON）
+echo "[5/6] 配置全局 settings.json..."
 PY=""
 if [ -n "$PYTHON_PATH" ] && command -v "$PYTHON_PATH" >/dev/null 2>&1; then
   PY="$PYTHON_PATH"
@@ -119,13 +124,11 @@ print('settings.json 已更新')
 "
 fi
 
-echo "[5/5] 完成！"
+echo "[6/6] 完成！"
 echo ""
 echo "ClaudeNotify 已安装到 $CLAUDE_DIR"
-echo "守护进程已在后台运行，重启 Claude Code 使 hooks 生效。"
-echo ""
-echo "如果重启电脑，需重新启动守护进程："
-echo "  powershell -WindowStyle Hidden -File $CLAUDE_DIR/notify-daemon.ps1"
+echo "守护进程已在后台运行，已配置开机自启。"
+echo "重启 Claude Code 使 hooks 生效。"
 echo ""
 echo "项目级配置（可选）："
 echo "  .claude/session-name.txt    项目默认会话名"
