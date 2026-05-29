@@ -17,6 +17,10 @@ if (-not (Test-Path $queueDir)) {
 # Clean stale trigger files from previous run
 Get-ChildItem $queueDir -Filter "*.json" -ErrorAction SilentlyContinue | Remove-Item -Force
 
+# Reset counter file (stale values from killed processes would offset popups off-screen)
+$counterFile = "$env:USERPROFILE\.claude\notify-counter.txt"
+"0" | Set-Content $counterFile -Force
+
 function Invoke-Notification($type, $projectDir, $sessionId) {
     $argList = @(
         '-NoProfile', '-WindowStyle', 'Hidden',
@@ -42,7 +46,9 @@ while ($true) {
             try {
                 $json = Get-Content $f.FullName -Raw -Encoding UTF8 | ConvertFrom-Json
                 Invoke-Notification -Type $json.type -ProjectDir $json.projectDir -SessionId $json.sessionId
-            } catch { $null = $_ }
+            } catch {
+                Add-Content "$env:USERPROFILE\.claude\notify-error.log" -Value "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') daemon-backlog: $_"
+            }
             Remove-Item $f.FullName -Force -ErrorAction SilentlyContinue
         }
     }
@@ -58,7 +64,9 @@ while ($true) {
     try {
         $json = Get-Content $path -Raw -Encoding UTF8 | ConvertFrom-Json
         Invoke-Notification -Type $json.type -ProjectDir $json.projectDir -SessionId $json.sessionId
-    } catch { $null = $_ }
+    } catch {
+        Add-Content "$env:USERPROFILE\.claude\notify-error.log" -Value "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') daemon-watcher: $_"
+    }
 
     Remove-Item $path -Force -ErrorAction SilentlyContinue
 }

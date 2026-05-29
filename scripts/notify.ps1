@@ -92,14 +92,20 @@ $left = $workArea.Right - $windowWidth - $margin
 
 # 共享计数器：获取弹窗位置编号（Mutex 保护原子操作）
 $stateMutex = New-Object System.Threading.Mutex($false, "Global\ClaudeNotifyState")
-$stateMutex.WaitOne()
+$hasMutex = $stateMutex.WaitOne(3000)
 $stateFile = "$env:USERPROFILE\.claude\notify-counter.txt"
-$counter = 0
-if (Test-Path $stateFile) { $counter = [int](Get-Content $stateFile -Raw) }
-$myIndex = [Math]::Max(0, $counter)
-$counter++
-Set-Content $stateFile -Value $counter
-$stateMutex.ReleaseMutex()
+$myIndex = 0
+if ($hasMutex) {
+    try {
+        $counter = 0
+        if (Test-Path $stateFile) { $counter = [int](Get-Content $stateFile -Raw) }
+        $myIndex = [Math]::Max(0, $counter)
+        $counter++
+        Set-Content $stateFile -Value $counter
+    } finally {
+        $stateMutex.ReleaseMutex()
+    }
+}
 
 $top = $workArea.Bottom - $windowHeight - $margin - ($myIndex * ($windowHeight + 8))
 
@@ -200,21 +206,32 @@ $window.Add_Loaded({ $timer.Start() })
 
 $window.Show() | Out-Null
 
-# 异步播放提示音（挂到窗口 Tag 防止 GC 提前回收 SoundPlayer）
-try {
-    $sound = New-Object Media.SoundPlayer $soundPath
-    $sound.Play()
-    $window.Tag = $sound
-} catch { }
+# 播放提示音
+if (Test-Path $soundPath) {
+    $window.Tag = New-Object Media.SoundPlayer $soundPath
+    try {
+        $window.Tag.Load()
+        $window.Tag.Play()
+    } catch {
+        try { [System.Console]::Beep(800, 300) } catch { }
+    }
+} else {
+    try { [System.Console]::Beep(800, 300) } catch { }
+}
 
 try {
     [System.Windows.Threading.Dispatcher]::PushFrame($frame)
 } finally {
     # 弹窗关闭，递减计数器（finally 确保崩溃也执行）
-    $stateMutex.WaitOne()
-    $counter = 0
-    if (Test-Path $stateFile) { $counter = [int](Get-Content $stateFile -Raw) }
-    if ($counter -gt 0) { $counter-- }
-    Set-Content $stateFile -Value $counter
-    $stateMutex.ReleaseMutex()
+    if ($hasMutex) {
+        $stateMutex.WaitOne(3000)
+        try {
+            $counter = 0
+            if (Test-Path $stateFile) { $counter = [int](Get-Content $stateFile -Raw) }
+            if ($counter -gt 0) { $counter-- }
+            Set-Content $stateFile -Value $counter
+        } finally {
+            $stateMutex.ReleaseMutex()
+        }
+    }
 }
