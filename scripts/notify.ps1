@@ -200,10 +200,11 @@ $window.Add_Loaded({ $timer.Start() })
 
 $window.Show() | Out-Null
 
-# 窗口已显示，异步播放提示音（不阻塞）
+# 异步播放提示音（挂到窗口 Tag 防止 GC 提前回收 SoundPlayer）
 try {
     $sound = New-Object Media.SoundPlayer $soundPath
     $sound.Play()
+    $window.Tag = $sound
 } catch { }
 
 try {
