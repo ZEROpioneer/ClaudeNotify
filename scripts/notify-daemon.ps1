@@ -18,13 +18,16 @@ if (-not (Test-Path $queueDir)) {
 Get-ChildItem $queueDir -Filter "*.json" -ErrorAction SilentlyContinue | Remove-Item -Force
 
 function Invoke-Notification($type, $projectDir, $sessionId) {
-    Start-Process -WindowStyle Hidden -FilePath powershell -ArgumentList @(
+    $args = @(
         '-NoProfile', '-WindowStyle', 'Hidden',
         '-File', $notifyScript,
         '-Type', $type,
-        '-ProjectDir', $projectDir,
-        '-SessionId', $sessionId
+        '-ProjectDir', $projectDir
     )
+    if ($sessionId) {
+        $args += @('-SessionId', $sessionId)
+    }
+    Start-Process -WindowStyle Hidden -FilePath powershell -ArgumentList $args
 }
 
 # Main loop: FileSystemWatcher + drain backlog

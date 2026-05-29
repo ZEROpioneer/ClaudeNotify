@@ -20,7 +20,11 @@ if [ -f "$PID_FILE" ]; then
     fi
 fi
 
-# 降级：守护进程不在，直接调 PowerShell 弹窗（慢但不会丢通知）
+# 降级：守护进程不在，直接调 PowerShell 弹窗
 if [ "$DAEMON_ALIVE" = false ]; then
-    powershell -NoProfile -Command "Start-Process -WindowStyle Hidden -FilePath powershell -ArgumentList @('-NoProfile','-File','$SCRIPT_DIR/notify.ps1','-Type','stop','-ProjectDir','$PWD','-SessionId','$sid')"
+    if [ -n "$sid" ]; then
+        powershell -NoProfile -Command "\$a=@('-NoProfile','-File','$SCRIPT_DIR/notify.ps1','-Type','stop','-ProjectDir','$PWD','-SessionId','$sid'); Start-Process -WindowStyle Hidden -FilePath powershell -ArgumentList \$a"
+    else
+        powershell -NoProfile -Command "\$a=@('-NoProfile','-File','$SCRIPT_DIR/notify.ps1','-Type','stop','-ProjectDir','$PWD'); Start-Process -WindowStyle Hidden -FilePath powershell -ArgumentList \$a"
+    fi
 fi
