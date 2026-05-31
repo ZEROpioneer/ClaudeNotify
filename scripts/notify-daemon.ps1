@@ -35,38 +35,45 @@ function Invoke-Notification($type, $projectDir, $sessionId) {
 }
 
 # Main loop: FileSystemWatcher + drain backlog
-$watcher = [System.IO.FileSystemWatcher]::new($queueDir, "*.json")
-$watcher.IncludeSubdirectories = $false
-
 while ($true) {
-    # Drain any backlog (files created while we were dispatching previous batch)
-    $files = Get-ChildItem $queueDir -Filter "*.json" -ErrorAction SilentlyContinue | Sort-Object CreationTime
-    if ($files) {
-        foreach ($f in $files) {
+    try {
+        $watcher = [System.IO.FileSystemWatcher]::new($queueDir, "*.json")
+        $watcher.IncludeSubdirectories = $false
+
+        # Drain any backlog (files created while we were dispatching previous batch)
+        $files = Get-ChildItem $queueDir -Filter "*.json" -ErrorAction SilentlyContinue | Sort-Object CreationTime
+        if ($files) {
+            foreach ($f in $files) {
+                try {
+                    $json = Get-Content $f.FullName -Raw -Encoding UTF8 | ConvertFrom-Json
+                    Invoke-Notification -Type $json.type -ProjectDir $json.projectDir -SessionId $json.sessionId
+                } catch {
+                    Add-Content "$env:USERPROFILE\.claude\notify-error.log" -Value "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') daemon-backlog: $_"
+                }
+                Remove-Item $f.FullName -Force -ErrorAction SilentlyContinue
+            }
+        }
+
+        while ($true) {
+            # Wait for new trigger files
+            $result = $watcher.WaitForChanged("Created", 1000)
+            if ($result.TimedOut) { continue }
+
+            Start-Sleep -Milliseconds 50
+            $path = Join-Path $queueDir $result.Name
+            if (-not (Test-Path $path)) { continue }
+
             try {
-                $json = Get-Content $f.FullName -Raw -Encoding UTF8 | ConvertFrom-Json
+                $json = Get-Content $path -Raw -Encoding UTF8 | ConvertFrom-Json
                 Invoke-Notification -Type $json.type -ProjectDir $json.projectDir -SessionId $json.sessionId
             } catch {
-                Add-Content "$env:USERPROFILE\.claude\notify-error.log" -Value "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') daemon-backlog: $_"
+                Add-Content "$env:USERPROFILE\.claude\notify-error.log" -Value "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') daemon-watcher: $_"
             }
-            Remove-Item $f.FullName -Force -ErrorAction SilentlyContinue
+
+            Remove-Item $path -Force -ErrorAction SilentlyContinue
         }
-    }
-
-    # Wait for new trigger files
-    $result = $watcher.WaitForChanged("Created", 1000)
-    if ($result.TimedOut) { continue }
-
-    Start-Sleep -Milliseconds 50
-    $path = Join-Path $queueDir $result.Name
-    if (-not (Test-Path $path)) { continue }
-
-    try {
-        $json = Get-Content $path -Raw -Encoding UTF8 | ConvertFrom-Json
-        Invoke-Notification -Type $json.type -ProjectDir $json.projectDir -SessionId $json.sessionId
     } catch {
-        Add-Content "$env:USERPROFILE\.claude\notify-error.log" -Value "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') daemon-watcher: $_"
+        Add-Content "$env:USERPROFILE\.claude\notify-error.log" -Value "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') daemon-loop-crash: $_"
+        Start-Sleep -Seconds 5
     }
-
-    Remove-Item $path -Force -ErrorAction SilentlyContinue
 }
