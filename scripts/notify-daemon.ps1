@@ -2,6 +2,12 @@
 # Watches trigger files and spawns notify.ps1 processes in parallel
 # Start: powershell -WindowStyle Hidden -File notify-daemon.ps1
 
+# 单实例锁：防止多个 daemon 同时运行导致重复弹窗
+$daemonMutex = New-Object System.Threading.Mutex($false, "Global\ClaudeNotifyDaemon")
+if (-not $daemonMutex.WaitOne(1000)) {
+    exit 0
+}
+
 $queueDir = Join-Path $env:USERPROFILE ".claude\notify-queue"
 $notifyScript = Join-Path $env:USERPROFILE ".claude\notify.ps1"
 
