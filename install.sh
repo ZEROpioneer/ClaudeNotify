@@ -49,8 +49,24 @@ fi
 
 # 4. 配置开机自启
 echo "[4/6] 配置开机自启..."
-powershell -NoProfile -Command "Set-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'ClaudeNotify' -Value 'powershell -WindowStyle Hidden -NoProfile -File \"%USERPROFILE%\.claude\notify-daemon.ps1\"'"
-echo "  已添加到注册表 Run 键，重启后自动启动守护进程"
+# 清理旧注册表方式
+powershell -NoProfile -Command "Remove-ItemProperty -Path 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run' -Name 'ClaudeNotify' -ErrorAction SilentlyContinue"
+
+# 创建无窗口启动 VBS
+cat > "$CLAUDE_DIR/notify-start.vbs" << 'VBSCRIPT'
+CreateObject("WScript.Shell").Run "powershell.exe -NoProfile -WindowStyle Hidden -File """ & CreateObject("WScript.Shell").ExpandEnvironmentStrings("%USERPROFILE%") & "\.claude\notify-daemon.ps1""", 0, False
+VBSCRIPT
+
+# 创建 Startup 文件夹快捷方式
+powershell -NoProfile -Command "
+\$startupDir = [Environment]::GetFolderPath('Startup')
+\$WshShell = New-Object -ComObject WScript.Shell
+\$Shortcut = \$WshShell.CreateShortcut(\"\$startupDir\ClaudeNotify.lnk\")
+\$Shortcut.TargetPath = '$CLAUDE_DIR/notify-start.vbs'
+\$Shortcut.WindowStyle = 7
+\$Shortcut.Save()
+"
+echo "  已添加到启动文件夹，重启后自动启动守护进程"
 
 # 5. 检测 Python（用于合并 JSON）
 echo "[5/6] 配置全局 settings.json..."
